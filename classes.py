@@ -42,11 +42,22 @@ class Routine:
 
 
 class AppManager:
-    ...
+    def __init__(self, routines: list[Routine] = [], sessions: list[Session] = []) -> None:
+        self.routines = routines
+        self.sessions = sessions
 
+    def create_routine(self, routine_name: str, rest: float, tempo: str, exercise_data: list[dict]):
+        # ID creation for Routines
+        if hasattr(AppManager.create_routine, "routine_ID"):
+            AppManager.create_routine.routine_ID += 1
+        else:
+            setattr(AppManager.create_routine, "routine_ID", 1)
+        id = AppManager.create_routine.routine_ID
 
+        # Deserialization
+        exercise_list = [Exercise(**exercise) for exercise in exercise_data]
+        self.routines.append(Routine(id, routine_name, rest, tempo, exercise_list))
 
-
-
-
-
+    
+    def create_exercise(self, name: str, sets: int, weight: float):
+        ...

@@ -1,6 +1,8 @@
-from classes import Routine, Exercise, Session
+from classes import AppManager
 from datetime import date
 from copy import deepcopy
+
+manager = AppManager()
 
 def main():
     routines = []
@@ -43,25 +45,21 @@ def main():
                 continue   
             
 
-def create_routine() -> Routine:
-    if hasattr(create_routine, "Routine_ID"):
-        create_routine.Routine_ID += 1
-    else:
-        setattr(create_routine, "Routine_ID", 1)
-
+def create_routine():
     print("\n=================== NEW ROUTINE CREATION ===================\n")
     routine_name = input("Name: ")
     exercise_num = int(input("Number of exercises: "))
-    exercise_list = []
-    for i in range(1, exercise_num+1):
+    exercise_data = []
+    
+    # Serialization
+    for i in range(1, exercise_num + 1):
         exercise_name = input(f"Exercise No.{i} name: ")
         set_num = int(input(f"Exercise No.{i} set number: "))
         weight = float(input(f"Exercise No.{i} weight: "))
-        exercise_list.append(Exercise(exercise_name, set_num, weight))
+        exercise_data.append({"name": exercise_name, "sets": set_num, "weight": weight})
     rest = float(input("Rest: "))
     tempo = input("Tempo: ")
-    routine = Routine(create_routine.Routine_ID, routine_name, rest, tempo, exercise_list)
-    return routine
+    manager.create_routine(routine_name, rest, tempo, exercise_data)
 
 
 def create_session(routines: list[Routine]):
