@@ -61,3 +61,25 @@ def test_create_session_increases_count():
     )
     
     assert len(manager.sessions) == initial_count + 1  
+
+
+def test_persistence(tmp_path):
+    d = tmp_path / "junk"
+    d.mkdir()
+    p = d / "test_storage.json"
+    
+    manager = AppManager()
+    manager.file_path = str(p)
+    
+    manager.create_routine("TestRoutine", 1.0, "1-2-3-4", [])
+    
+    manager.save_data()
+    
+    assert p.exists()
+    
+    new_manager = AppManager()
+    new_manager.file_path = str(p)
+    new_manager.load_data()
+    
+    assert len(new_manager.routines) == 1
+    assert new_manager.routines[0].name == "TestRoutine"
