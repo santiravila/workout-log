@@ -1,7 +1,4 @@
-from models import AppManager
-
-
-manager = AppManager()
+from controller import manager
 
 
 def print_menu():

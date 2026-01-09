@@ -1,8 +1,9 @@
+from controller import manager
 import views
 
 
 def main():
-    views.manager.load_data()
+    manager.load_data()
 
     while True:
         views.print_menu()
@@ -18,7 +19,7 @@ def main():
             case 4:
                 views.consult_routines()
             case 5:
-                views.manager.save_data()
+                manager.save_data()
                 break
 
 
