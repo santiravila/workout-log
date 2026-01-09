@@ -1,0 +1,36 @@
+{
+  "routines": [
+    {
+      "id": 1,
+      "name": "hypertrophy",
+      "rest": 2.5,
+      "tempo": "1-2-3-4",
+      "exercises": [
+        {
+          "name": "pullups",
+          "sets": 2,
+          "weight": 15.0,
+          "reps": []
+        }
+      ]
+    }
+  ],
+  "sessions": [
+    {
+      "id": 1,
+      "routine_name": "hypertrophy",
+      "date": "2026-01-09",
+      "exercises": [
+        {
+          "name": "pullups",
+          "sets": 2,
+          "weight": 15.0,
+          "reps": [
+            5,
+            5
+          ]
+        }
+      ]
+    }
+  ]
+}

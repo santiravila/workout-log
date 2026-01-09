@@ -3,14 +3,15 @@ from models import AppManager
 
 manager = AppManager()
 
+
 def print_menu():
     print(
-    "\n========================= MAIN MENU =========================\n\n" \
-    "1. Create new Workout Session\n" \
-    "2. Consult Workout Log\n" \
-    "3. Create a new Routine\n" \
-    "4. Consult Routines\n" \
-    "5. Exit\n" \
+        "\n========================= MAIN MENU =========================\n\n"
+        "1. Create new Workout Session\n"
+        "2. Consult Workout Log\n"
+        "3. Create a new Routine\n"
+        "4. Consult Routines\n"
+        "5. Exit\n"
     )
 
 
@@ -27,8 +28,8 @@ def create_routine():
     print("\n=================== NEW ROUTINE CREATION ===================\n")
     routine_name = input("Name: ")
     exercise_num = int(input("Number of exercises: "))
-    exercise_data = [] # NO EDD EN VIEW
-    
+    exercise_data = []  # NO EDD EN VIEW
+
     # Routine Serialization
     for i in range(1, exercise_num + 1):
         exercise_name = input(f"Exercise No.{i} name: ")
@@ -37,7 +38,7 @@ def create_routine():
         exercise_data.append({"name": exercise_name, "sets": set_num, "weight": weight})
     rest = float(input("Rest: "))
     tempo = input("Tempo: ")
-    
+
     manager.create_routine(routine_name, rest, tempo, exercise_data)
 
 
@@ -53,7 +54,7 @@ def create_session():
         routine = manager.get_routine(routine_name)
         if not routine:
             print("Not an existing routine")
-        else:    
+        else:
             exercises = routine.exercises
             exercise_data = []
 
@@ -62,11 +63,18 @@ def create_session():
                 print(exercise.name)
                 for j in range(1, exercise.sets + 1):
                     session_reps.append(int(input(f"Reps for set {j}: ")))
-                exercise_data.append({"name": exercise.name, "sets": exercise.sets, "weight": exercise.weight, "reps": session_reps})
+                exercise_data.append(
+                    {
+                        "name": exercise.name,
+                        "sets": exercise.sets,
+                        "weight": exercise.weight,
+                        "reps": session_reps,
+                    }
+                )
 
             manager.create_session(routine_name, exercise_data)
 
-    
+
 def print_routines(routines):
     for routine in routines:
         print(f"{routine.id} | {routine.name}")
@@ -84,9 +92,9 @@ def consult_log():
             for exercise in routine_exercises:
                 print(exercise)
             print()
-    
 
-def consult_routines(): 
+
+def consult_routines():
     print("\n=================== EXISTING ROUTINES ===================\n")
     routines = manager.routines
     if not routines:
