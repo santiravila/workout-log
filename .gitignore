@@ -1,0 +1,7 @@
+# storage file
+data/storage.json
+
+# Standard Python ignores
+__pycache__/
+.pytest_cache/
+*.pyc
