@@ -1,6 +1,5 @@
 from models import AppManager
-import pytest
-from datetime import date
+
 
 def test_create_routine_increases_count():
     manager = AppManager()
@@ -48,7 +47,7 @@ def test_create_session_increases_count():
     manager = AppManager()
     initial_count = len(manager.sessions)    
 
-    routine = manager.create_routine(
+    manager.create_routine(
         "name", 
         5.4, 
         "1-2-3-4",

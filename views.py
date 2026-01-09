@@ -44,32 +44,39 @@ def create_session():
     routines = manager.routines
     if not routines:
         print("No saved Routines")
-    else:
-        print("Choose from one of these routines: ")
-        print_routines(routines)
-        routine_name = input("Routine name: ")
-        routine = manager.get_routine(routine_name)
-        if not routine:
-            print("Not an existing routine")
-        else:
-            exercises = routine.exercises
-            exercise_data = []
+        return
+    
+    print("Choose from one of these routines: ")
+    print_routines(routines)
 
-            for i, exercise in enumerate(exercises):
-                session_reps = []
-                print(exercise.name)
-                for j in range(1, exercise.sets + 1):
-                    session_reps.append(int(input(f"Reps for set {j}: ")))
-                exercise_data.append(
-                    {
-                        "name": exercise.name,
-                        "sets": exercise.sets,
-                        "weight": exercise.weight,
-                        "reps": session_reps,
-                    }
-                )
+    routine_name = input("Routine name: ")
+    routine = manager.get_routine(routine_name)
+    if not routine:
+        print("Not an existing routine")
+        return
+    
+    exercise_data = get_reps_for_session(routine)
+    manager.create_session(routine_name, exercise_data)
 
-            manager.create_session(routine_name, exercise_data)
+
+def get_reps_for_session(routine):
+    exercises = routine.exercises
+    exercise_data = []
+
+    for exercise in exercises:
+        session_reps = []
+        print(exercise.name)
+        for i in range(1, exercise.sets + 1):
+            session_reps.append(int(input(f"Reps for set {i}: ")))
+        exercise_data.append(
+            {
+                "name": exercise.name,
+                "sets": exercise.sets,
+                "weight": exercise.weight,
+                "reps": session_reps,
+            }
+        )
+    return exercise_data
 
 
 def print_routines(routines):
