@@ -22,25 +22,40 @@ def get_user_input():
 
 
 def create_routine():
-    print("\n=================== NEW ROUTINE CREATION ===================\n")
-    routine_name = input("Name: ")
+    print("\n=================== ROUTINE CREATION ===================\n")
+    
+    while True:
+        try:
+            name = input("Name: ")
+            creation = manager.start_routine_creation(name)
+            break
+        except ValueError as e:
+            print(e)
+
     exercise_num = int(input("Number of exercises: "))
-    exercise_data = []  # NO EDD EN VIEW
-
-    # Routine Serialization
     for i in range(1, exercise_num + 1):
-        exercise_name = input(f"Exercise No.{i} name: ")
-        set_num = int(input(f"Exercise No.{i} set number: "))
-        weight = float(input(f"Exercise No.{i} weight: "))
-        exercise_data.append({"name": exercise_name, "sets": set_num, "weight": weight})
-    rest = float(input("Rest: "))
-    tempo = input("Tempo: ")
+        while True:
+            try:
+                name = input(f"Exercise No.{i} name: ")
+                sets = int(input(f"Exercise No.{i} set number: "))
+                weight = float(input(f"Exercise No.{i} weight: "))
+                creation.add_exercise(name, sets, weight)
+            except ValueError as e:
+                print(e)
 
-    manager.create_routine(routine_name, rest, tempo, exercise_data)
+    creation.set_rest(float(input("Rest: ")))
+    creation.set_tempo(input("Tempo: "))
+
+    try:
+        creation.finish()
+        print("Routine created successfully")
+    except ValueError as e:
+        print(f"Error creating routine: {e}")
 
 
 def create_session():
-    print("\n=================== NEW SESSION CREATION ===================\n")
+    print("\n=================== SESSION CREATION ===================\n")
+
     routines = manager.routines
     if not routines:
         print("No saved Routines")
@@ -48,7 +63,7 @@ def create_session():
     
     print("Choose from one of these routines: ")
     print_routines(routines)
-
+    
     routine_name = input("Routine name: ")
     routine = manager.get_routine(routine_name)
     if not routine:

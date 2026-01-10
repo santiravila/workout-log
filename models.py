@@ -106,25 +106,66 @@ class Routine:
         }
 
 
+class RoutineCreation:
+    def __init__(self, manager, name: str):
+        if name in [routine.name for routine in manager.routines]:
+            raise ValueError("Routine already exists")
+
+        self.manager = manager
+        self.name = name
+
+        self.exercises = []
+        self.rest = None
+        self.tempo = None
+
+    def add_exercise(self, name: str, sets: int, weight: float):
+        if sets <= 0:
+            raise ValueError("Sets must be positive")
+        
+        if weight < 0:
+            raise ValueError("Weight cannot be negative")
+        exercise = Exercise(name, sets, weight)
+        self.exercises.append(exercise)
+
+    def set_rest(self, rest: float):
+        if rest < 0:
+            raise ValueError("Rest cannot be negative")
+        self.rest = rest
+    
+    def set_tempo(self, tempo: str):
+        if not tempo:
+            raise ValueError("Tempo cannot be empty")
+        self.tempo = tempo
+
+    def finish(self) -> Routine | None:
+        if not self.exercises:
+            raise ValueError("Routine must have at least one exercise")
+        
+        if self.rest is None or self.tempo is None:
+            raise ValueError("Routine is incomplete")
+        
+        routine_id = len(self.manager.routines) + 1
+
+        routine = Routine(
+            routine_id,
+            self.name,
+            self.rest,
+            self.tempo,
+            self.exercises
+        )
+
+        self.manager.routines.append(routine)
+        return routine
+
+
 class AppManager:
-    def __init__(
-        self,
-        routines: list[Routine] | None = None,
-        sessions: list[Session] | None = None,
-    ) -> None:
-        self.routines = [] if routines is None else routines
-        self.sessions = [] if sessions is None else sessions
+    def __init__(self) -> None:
+        self.routines = [] 
+        self.sessions = [] 
         self.file_path = "data/storage.json"
 
-    def create_routine(
-        self, routine_name: str, rest: float, tempo: str, exercise_data: list[dict]
-    ):
-        # Deserialization
-        exercise_list = [Exercise(**exercise) for exercise in exercise_data]
-        routine_id = len(self.routines) + 1
-        new_routine = Routine(routine_id, routine_name, rest, tempo, exercise_list)
-        self.routines.append(new_routine)
-        return new_routine
+    def start_routine_creation(self, name: str) -> RoutineCreation:
+        return RoutineCreation(self, name)
 
     def get_routine(self, name: str) -> Routine | None:
         for routine in self.routines:
