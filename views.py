@@ -40,9 +40,10 @@ def create_routine():
                 sets = int(input(f"Exercise No.{i} set number: "))
                 weight = float(input(f"Exercise No.{i} weight: "))
                 creation.add_exercise(name, sets, weight)
+                break
             except ValueError as e:
                 print(e)
-
+    
     creation.set_rest(float(input("Rest: ")))
     creation.set_tempo(input("Tempo: "))
 
@@ -56,42 +57,34 @@ def create_routine():
 def create_session():
     print("\n=================== SESSION CREATION ===================\n")
 
-    routines = manager.routines
+    routines = manager.get_routines()
     if not routines:
-        print("No saved Routines")
+        print("No saved routines")
         return
-    
-    print("Choose from one of these routines: ")
+
     print_routines(routines)
-    
-    routine_name = input("Routine name: ")
-    routine = manager.get_routine(routine_name)
-    if not routine:
-        print("Not an existing routine")
-        return
-    
-    exercise_data = get_reps_for_session(routine)
-    manager.create_session(routine_name, exercise_data)
 
+    while True:
+        try:
+            name = input("Routine name: ")
+            routine = manager.get_routine(name)
+            creation = manager.start_session_creation(routine)
+            break
+        except ValueError as e:
+            print(e)
 
-def get_reps_for_session(routine):
-    exercises = routine.exercises
-    exercise_data = []
-
-    for exercise in exercises:
-        session_reps = []
-        print(exercise.name)
-        for i in range(1, exercise.sets + 1):
-            session_reps.append(int(input(f"Reps for set {i}: ")))
-        exercise_data.append(
-            {
-                "name": exercise.name,
-                "sets": exercise.sets,
-                "weight": exercise.weight,
-                "reps": session_reps,
-            }
-        )
-    return exercise_data
+    for exercise in routine.exercises:
+        print(f"Fill reps for each set of {exercise.name}")
+        for set in range(exercise.sets):
+            while True:
+                try:
+                    reps = int(input(f"Reps for set {set + 1}: "))
+                    creation.add_reps(exercise, set, reps)
+                    break
+                except ValueError as e:
+                    print(e)
+                    
+    creation.finish()
 
 
 def print_routines(routines):

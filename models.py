@@ -68,6 +68,8 @@ class Session:
         }
 
 
+
+
 class Routine:
     @classmethod
     def from_dict(cls, data: dict):
@@ -158,6 +160,38 @@ class RoutineCreation:
         return routine
 
 
+class SessionCreation:
+    def __init__(self, manager, routine: Routine):
+        self.manager = manager
+        self.routine = routine
+        self.exercises = deepcopy(routine.exercises)
+
+    def add_reps(self, exercise: Exercise, set: int, rep_number: int):
+        if rep_number < 0:
+            raise ValueError("Reps must be positive")
+        
+        for internal_exercise in self.exercises:
+            if exercise.name == internal_exercise.name:
+                internal_exercise.reps.append(rep_number)        
+                
+    def finish(self):
+        for exercise in self.exercises:
+            if exercise.sets != len(exercise.reps):
+                raise ValueError(f"Exercise reps: {exercise.reps} do not match number of sets: {exercise.sets}")
+
+        session_id = len(self.manager.sessions) + 1
+
+        session = Session(
+            session_id,
+            self.routine.name,
+            date.today(),
+            self.exercises
+        )
+
+        self.manager.sessions.append(session)
+        return session
+
+
 class AppManager:
     def __init__(self) -> None:
         self.routines = [] 
@@ -167,12 +201,19 @@ class AppManager:
     def start_routine_creation(self, name: str) -> RoutineCreation:
         return RoutineCreation(self, name)
 
-    def get_routine(self, name: str) -> Routine | None:
+    def start_session_creation(self, routine: Routine) -> SessionCreation:
+        return SessionCreation(self, routine)
+    
+    def get_routines(self):
+        return self.routines
+    
+    def get_routine(self, name: str) -> Routine:
         for routine in self.routines:
             if routine.name == name:
                 return deepcopy(routine)
-        return None
-
+        raise ValueError(f"No routine of name: {name}")
+    
+    """
     def create_session(self, routine_name: str, exercises_data: list[dict]):
         # Deserialization
         exercises_with_reps = [Exercise(**exercise) for exercise in exercises_data]
@@ -182,6 +223,7 @@ class AppManager:
         )
         self.sessions.append(new_session)
         return new_session
+    """
 
     def save_data(self):
         data = {
