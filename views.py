@@ -66,8 +66,8 @@ def create_session():
 
     while True:
         try:
-            name = input("Routine name: ")
-            routine = manager.get_routine(name)
+            routine_index = int(input("Routine index: "))
+            routine = manager.get_routine(routine_index)
             creation = manager.start_session_creation(routine)
             break
         except ValueError as e:
@@ -94,27 +94,93 @@ def print_routines(routines):
 
 def consult_log():
     print("\n=================== EXISTING SESSIONS ===================\n")
-    routines = manager.sessions
-    if not routines:
-        print("No saved Sessions")
-    else:
-        for routine in routines:
-            routine_exercises = routine.exercises
-            print(routine)
-            for exercise in routine_exercises:
-                print(exercise)
-            print()
+
+    print("1 | Show all logged sessions in chronological order")
+    print("2 | Filter sessions by routine")
+    print("3 | Return to main menu\n")
+    
+    option = consult_log_choice()
+    if option == 1:
+        print_sessions()
+    elif option == 2:
+        print_filtered_sessions()
+    elif option == 3:
+        return
+
+
+def consult_log_choice():
+    while True:
+        try:
+            option = int(input("Option: "))
+            if option < 0 or option > 3:
+                pass
+            break
+        except ValueError:
+            pass
+
+    return option
+    
+
+def print_sessions():
+    sessions = manager.get_sessions()
+    if not sessions:
+        print("\nNo saved Sessions")
+        return
+
+    print()
+    for session in sessions:
+        session_exercises = session.exercises
+        print(session)
+        for exercise in session_exercises:
+            print(exercise)
+        print()
+
+
+def print_filtered_sessions():
+    print("Select a routine: ")
+    routines = manager.get_routines()
+
+    print_routines(routines)
+
+    while True:
+        try:
+            routine_index = int(input("Routine index: "))
+            routine = manager.get_routine(routine_index)
+            break
+        except ValueError as e:
+            print(e)
+
+    sessions = manager.get_sessions()
+    
+    filtered_sessions = [
+        session 
+        for session in sessions 
+        if session.routine_name == routine.name
+    ]
+
+    if not filtered_sessions:
+        print(f"\nNo existing sessions based on routine: {routine.name}")
+        return
+    
+    print()
+    for filtered in filtered_sessions:
+        print(filtered)
+        for exercise in filtered.exercises:
+            print(exercise)
+        print()
 
 
 def consult_routines():
     print("\n=================== EXISTING ROUTINES ===================\n")
+
     routines = manager.routines
     if not routines:
         print("No saved Routines")
-    else:
-        for routine in routines:
-            print(routine)
-            routine_exercises = routine.exercises
-            for exercise in routine_exercises:
-                print(exercise)
-            print()
+        return
+    
+    for routine in routines:
+        print(routine)
+        routine_exercises = routine.exercises
+        for exercise in routine_exercises:
+            print(exercise)
+        print()

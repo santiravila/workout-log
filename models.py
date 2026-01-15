@@ -68,8 +68,6 @@ class Session:
         }
 
 
-
-
 class Routine:
     @classmethod
     def from_dict(cls, data: dict):
@@ -207,23 +205,14 @@ class AppManager:
     def get_routines(self):
         return self.routines
     
-    def get_routine(self, name: str) -> Routine:
-        for routine in self.routines:
-            if routine.name == name:
-                return deepcopy(routine)
-        raise ValueError(f"No routine of name: {name}")
+    def get_sessions(self):
+        return self.sessions
     
-    """
-    def create_session(self, routine_name: str, exercises_data: list[dict]):
-        # Deserialization
-        exercises_with_reps = [Exercise(**exercise) for exercise in exercises_data]
-        session_id = len(self.sessions) + 1
-        new_session = Session(
-            session_id, routine_name, date.today(), exercises_with_reps
-        )
-        self.sessions.append(new_session)
-        return new_session
-    """
+    def get_routine(self, index: int) -> Routine:
+        for routine in self.routines:
+            if routine.id == index:
+                return deepcopy(routine)
+        raise ValueError(f"No routine of index: {routine.id}")
 
     def save_data(self):
         data = {
