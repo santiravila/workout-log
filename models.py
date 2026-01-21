@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 from copy import deepcopy
 import json
 
@@ -42,14 +42,14 @@ class Session:
     @classmethod
     def from_dict(cls, data: dict):
         if "date" in data:
-            data["date"] = date.fromisoformat(data["date"])
+            data["date"] = datetime.fromisoformat(data["date"])
         
         data["exercises"] = [Exercise.from_dict(exercise) for exercise in data["exercises"]]
 
         return cls(**data)
 
     def __init__(
-        self, id: int, routine_name: str, date: date, exercises: list[Exercise]
+        self, id: int, routine_name: str, date: datetime, exercises: list[Exercise]
     ) -> None:
         self.id = id
         self.date = date
@@ -182,7 +182,7 @@ class SessionCreation:
         session = Session(
             session_id,
             self.routine.name,
-            date.today(),
+            datetime.now(),
             self.exercises
         )
 

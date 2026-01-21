@@ -1,14 +1,37 @@
 from controller import manager
+import inflect
+from rich.console import Console
+from rich.panel import Panel
+from rich.align import Align
+from rich.tree import Tree
+
+
+p = inflect.engine()
+console = Console()
+
+
+def ordinal(n: int) -> str:
+    return p.ordinal(n) # type: ignore[arg-type]
 
 
 def print_menu():
-    print(
-        "\n========================= MAIN MENU =========================\n\n"
-        "1. Create new Workout Session\n"
-        "2. Consult Workout Log\n"
-        "3. Create a new Routine\n"
-        "4. Consult Routines\n"
-        "5. Exit\n"
+    menu_text = """
+    1. Create new Workout Session
+    2. Consult Workout Log
+    3. Create a new Routine
+    4. Consult Routines
+    5. Exit
+    """
+    menu = Align.center(menu_text)
+
+    console.print(
+        Panel(
+            menu,
+            title="MAIN MENU",
+            subtitle="Select an option",
+            border_style="cyan",
+            padding=(1, 2),
+        )
     )
 
 
@@ -22,7 +45,10 @@ def get_user_input():
 
 
 def create_routine():
-    print("\n=================== ROUTINE CREATION ===================\n")
+    panel = Panel(
+        "asa",
+        title="SESSION CREATION"
+    )
     
     while True:
         try:
@@ -36,9 +62,9 @@ def create_routine():
     for i in range(1, exercise_num + 1):
         while True:
             try:
-                name = input(f"Exercise No.{i} name: ")
-                sets = int(input(f"Exercise No.{i} set number: "))
-                weight = float(input(f"Exercise No.{i} weight: "))
+                name = input(f"{ordinal(i)} Exercise name: ")
+                sets = int(input(f"{ordinal(i)}Exercise set number: "))
+                weight = float(input(f"{ordinal(i)} Exercise weight: "))
                 creation.add_exercise(name, sets, weight)
                 break
             except ValueError as e:
@@ -78,7 +104,7 @@ def create_session():
         for set in range(exercise.sets):
             while True:
                 try:
-                    reps = int(input(f"Reps for set {set + 1}: "))
+                    reps = int(input(f"Reps for {ordinal(set + 1)} set: "))
                     creation.add_reps(exercise, set, reps)
                     break
                 except ValueError as e:
@@ -93,11 +119,22 @@ def print_routines(routines):
 
 
 def consult_log():
-    print("\n=================== EXISTING SESSIONS ===================\n")
+    menu_text = """
+        1. Display saved sessions
+        2. Filter sessions by routine
+        3. Return to main menu
+    """
 
-    print("1 | Show all logged sessions in chronological order")
-    print("2 | Filter sessions by routine")
-    print("3 | Return to main menu\n")
+    menu = Align.center(menu_text)
+
+    console.print(
+        Panel(
+            menu,
+            title="SAVED SESSIONS",
+            border_style="cyan",
+            padding=(1, 2),
+        )
+    )
     
     option = consult_log_choice()
     if option == 1:
@@ -124,31 +161,61 @@ def consult_log_choice():
 def print_sessions():
     sessions = manager.get_sessions()
     if not sessions:
-        print("\nNo saved Sessions")
+        console.print(
+            Panel(
+                "No saved sessions",
+                title="SAVED SESSIONS",
+                border_style="red",
+            )
+        )
         return
-
-    print()
+    
+    tree = Tree("Sessions", guide_style="bold cyan")
+    
     for session in sessions:
-        session_exercises = session.exercises
-        print(session)
-        for exercise in session_exercises:
-            print(exercise)
-        print()
+        session_node = tree.add(f"[bold]{session}[/bold]")
+        for exercise in session.exercises:
+            session_node.add(f"{str(exercise)}")
+
+    console.print(
+        Panel(
+            tree,
+            title="SAVED SESSIONS",
+            border_style="cyan",
+            padding=(1, 2),
+        )
+    )
+
+    exit = input("Return to main menu")
+    if exit:
+        return
 
 
 def print_filtered_sessions():
-    print("Select a routine: ")
     routines = manager.get_routines()
+    if not routines:
+        console.print(
+            Panel(
+                "No saved routines",
+                title="Routines",
+                border_style="red",
+            )
+        )
+        return
 
-    print_routines(routines)
+    routines_tree = Tree("Available Routines", guide_style="bold cyan")
+    for i, routine in enumerate(routines, start=1):
+        routines_tree.add(f"[bold]{i}[/bold] · {routine.name}")
+    
+    console.print(Panel(routines_tree, border_style="cyan"))
 
     while True:
         try:
-            routine_index = int(input("Routine index: "))
+            routine_index = int(console.input("[bold cyan]Routine index:[/] "))
             routine = manager.get_routine(routine_index)
             break
         except ValueError as e:
-            print(e)
+            console.print(f"[red]{e}[/red]")
 
     sessions = manager.get_sessions()
     
@@ -159,28 +226,64 @@ def print_filtered_sessions():
     ]
 
     if not filtered_sessions:
-        print(f"\nNo existing sessions based on routine: {routine.name}")
+        console.print(
+            Panel(
+                f"No existing sessions based on routine: [bold]{routine.name}[/bold]",
+                title="Sessions",
+                border_style="yellow",
+            )
+        )
         return
     
-    print()
-    for filtered in filtered_sessions:
-        print(filtered)
-        for exercise in filtered.exercises:
-            print(exercise)
-        print()
+    sessions_tree = Tree(
+        f"Sessions for [bold]{routine.name}[/bold]",
+        guide_style="bold green",
+    )
+    
+    for session in filtered_sessions:
+        session_node = sessions_tree.add(f"[bold]{session}[/bold]")
+
+        for exercise in session.exercises:
+            session_node.add(str(exercise))
+
+    console.print(
+        Panel(
+            sessions_tree,
+            title="Workout History",
+            border_style="green",
+            padding=(1, 2),
+        )
+    )
 
 
-def consult_routines():
-    print("\n=================== EXISTING ROUTINES ===================\n")
-
-    routines = manager.routines
+def consult_routines(routines):
     if not routines:
-        print("No saved Routines")
+        console.print(
+            Panel(
+                "No saved routines",
+                title="Saved Routines",
+                border_style="red",
+            )
+        )
         return
+    
+    tree = Tree("Routines", guide_style="bold cyan")
     
     for routine in routines:
-        print(routine)
-        routine_exercises = routine.exercises
-        for exercise in routine_exercises:
-            print(exercise)
-        print()
+        routine_node = tree.add(f"[bold]{routine}[/bold]")
+
+        for exercise in routine.exercises:
+            routine_node.add(str(exercise))
+
+    console.print(
+        Panel(
+            tree,
+            title="SAVED ROUTINES",
+            border_style="cyan",
+            padding=(1, 2),
+        )
+    )
+
+    exit = input("Return to main menu")
+    if exit:
+        return

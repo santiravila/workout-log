@@ -17,7 +17,7 @@ def main():
             case 3:
                 views.create_routine()
             case 4:
-                views.consult_routines()
+                views.consult_routines(manager.get_routines())
             case 5:
                 manager.save_data()
                 break
