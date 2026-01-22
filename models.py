@@ -1,6 +1,11 @@
 from datetime import datetime
 from copy import deepcopy
 import json
+from pathlib import Path
+
+
+DATA_DIR = Path("data")
+STORAGE_FILE = DATA_DIR / "storage.json"
 
 
 class Exercise:
@@ -194,7 +199,6 @@ class AppManager:
     def __init__(self) -> None:
         self.routines = [] 
         self.sessions = [] 
-        self.file_path = "data/storage.json"
 
     def start_routine_creation(self, name: str) -> RoutineCreation:
         return RoutineCreation(self, name)
@@ -219,13 +223,16 @@ class AppManager:
             "routines": [r.to_dict() for r in self.routines],
             "sessions": [s.to_dict() for s in self.sessions],
         }
-
-        with open(self.file_path, "w") as f:
+    
+        with open(STORAGE_FILE, "w") as f:
             json.dump(data, f, indent=2)
 
     def load_data(self):
+        # Ensure the data directory exists
+        DATA_DIR.mkdir(exist_ok=True)
+
         try:
-            with open(self.file_path, "r") as f:
+            with open(STORAGE_FILE, "r") as f:
                 data = json.load(f)
 
             for routine in data["routines"]:
@@ -237,5 +244,5 @@ class AppManager:
                 loaded_session = Session.from_dict(session)
                 if loaded_session is not None:
                     self.sessions.append(loaded_session)
-        except FileNotFoundError:
-            pass
+        except FileNotFoundError as e:
+            print(e)
