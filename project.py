@@ -11,7 +11,7 @@ def main():
 
         match option:
             case 1:
-                views.create_session()
+                views.create_session(manager.get_routines())
             case 2:
                 views.consult_log(manager.get_sessions(), manager.get_routines())
             case 3:
@@ -19,8 +19,7 @@ def main():
             case 4:
                 views.consult_routines(manager.get_routines())
             case 5:
-                # Workout reports
-                ...
+                views.create_report(manager.get_routines(), manager.get_sessions())
             case 6:
                 manager.save_data()
                 break

@@ -113,7 +113,7 @@ class Routine:
 
 class RoutineCreation:
     def __init__(self, manager, name: str):
-        if name in [routine.name for routine in manager.routines]:
+        if name in [routine.name for routine in manager.get_routines()]:
             raise ValueError("Routine already exists")
 
         self.manager = manager
@@ -149,7 +149,7 @@ class RoutineCreation:
         if self.rest is None or self.tempo is None:
             raise ValueError("Routine is incomplete")
         
-        routine_id = len(self.manager.routines) + 1
+        routine_id = len(self.manager.get_routines()) + 1
 
         routine = Routine(
             routine_id,
@@ -169,7 +169,7 @@ class SessionCreation:
         self.routine = routine
         self.exercises = deepcopy(routine.exercises)
 
-    def add_reps(self, exercise: Exercise, set: int, rep_number: int):
+    def add_reps(self, exercise: Exercise, rep_number: int):
         if rep_number < 0:
             raise ValueError("Reps must be positive")
         

@@ -1,3 +1,4 @@
+import sys
 from controller import manager
 import inflect
 from rich.console import Console
@@ -22,7 +23,8 @@ def print_menu():
     2. Consult Workout Log
     3. Create a new Routine
     4. Consult Routines
-    5. Exit
+    5. Create workout report
+    6. Exit
     """
     menu = Align.center(menu_text)
 
@@ -117,10 +119,9 @@ def create_routine():
         )
 
 
-def create_session():
+def create_session(routines):
     console.clear()
 
-    routines = manager.get_routines()
     if not routines:
         print("No saved routines")
         return
@@ -151,12 +152,26 @@ def create_session():
                             f"[bold cyan]Reps for {ordinal(set + 1)} set:[/] "
                         )
                     )
-                    creation.add_reps(exercise, set, reps)
+                    creation.add_reps(exercise, reps)
                     break
                 except ValueError as e:
                     console.print(f"[red]{e}[/red]")
 
-    creation.finish()
+    try:
+        creation.finish()
+        console.print(
+            Panel(
+                "[bold green]Session created successfully[/bold green]",
+                border_style="green",
+            )
+        )
+    except ValueError as e:
+        console.print(
+            Panel(
+                f"[red]Error creating session:[/] {e}",
+                border_style="red",
+            )
+        )
 
 
 def print_routines(routines):
@@ -198,7 +213,35 @@ def consult_log(sessions, routines):
     if option == 1:
         print_sessions(sessions=sessions)
     elif option == 2:
-        print_filtered_sessions(sessions=sessions, routines=routines)
+        # validate
+        if not routines:
+            console.print(
+                Panel(
+                    "No saved routines",
+                    title="Routines",
+                    border_style="red",
+                )
+            )
+            return
+    
+        # show available routines
+        routines_tree = Tree("Available Routines", guide_style="bold cyan")
+        for i, routine in enumerate(routines, start=1):
+            routines_tree.add(f"[bold]{i}[/bold] · {routine.name}")
+
+        console.print(Panel(routines_tree, border_style="cyan"))
+        
+        # get routine
+        while True:
+            try:
+                routine_index = int(console.input("[bold cyan]Routine index:[/] "))
+                routine = manager.get_routine(routine_index)
+                break
+            except ValueError as e:
+                console.print(f"[red]{e}[/red]")
+
+        filtered_sessions = filter_sessions_by_routine(sessions, routine)
+        print_sessions(filtered_sessions)
     elif option == 3:
         return
 
@@ -219,17 +262,17 @@ def consult_log_choice():
 def print_sessions(sessions):
     console.clear()
 
-    tree = Tree("Sessions", guide_style="bold cyan")
+    sessions_tree = Tree("Sessions", guide_style="bold cyan")
 
     for session in sessions:
-        session_node = tree.add(f"[bold]{session}[/bold]")
+        session_node = sessions_tree.add(f"[bold]{session}[/bold]")
         for exercise in session.exercises:
             session_node.add(f"{str(exercise)}")
 
     console.print(
         Panel(
-            tree,
-            title="SAVED SESSIONS",
+            sessions_tree,
+            title="SESSIONS",
             border_style="cyan",
             padding=(1, 2),
         )
@@ -240,33 +283,7 @@ def print_sessions(sessions):
         return
 
 
-def print_filtered_sessions(sessions, routines):
-    console.clear()
-
-    if not routines:
-        console.print(
-            Panel(
-                "No saved routines",
-                title="Routines",
-                border_style="red",
-            )
-        )
-        return
-
-    routines_tree = Tree("Available Routines", guide_style="bold cyan")
-    for i, routine in enumerate(routines, start=1):
-        routines_tree.add(f"[bold]{i}[/bold] · {routine.name}")
-
-    console.print(Panel(routines_tree, border_style="cyan"))
-
-    while True:
-        try:
-            routine_index = int(console.input("[bold cyan]Routine index:[/] "))
-            routine = manager.get_routine(routine_index)
-            break
-        except ValueError as e:
-            console.print(f"[red]{e}[/red]")
-
+def filter_sessions_by_routine(sessions, routine):
     filtered_sessions = [
         session for session in sessions if session.routine_name == routine.name
     ]
@@ -280,30 +297,8 @@ def print_filtered_sessions(sessions, routines):
             )
         )
         return
-
-    sessions_tree = Tree(
-        f"Sessions for [bold]{routine.name}[/bold]",
-        guide_style="bold green",
-    )
-
-    for session in filtered_sessions:
-        session_node = sessions_tree.add(f"[bold]{session}[/bold]")
-
-        for exercise in session.exercises:
-            session_node.add(str(exercise))
-
-    console.print(
-        Panel(
-            sessions_tree,
-            title="Workout History",
-            border_style="green",
-            padding=(1, 2),
-        )
-    )
-
-    exit = input("Return to main menu")
-    if exit:
-        return
+    
+    return filtered_sessions
 
 
 def consult_routines(routines):
@@ -339,3 +334,39 @@ def consult_routines(routines):
     exit = input("Return to main menu")
     if exit:
         return
+
+
+def create_report(routines, sessions):
+    console.clear()
+
+    #get routine type
+    print_routines(routines=routines)
+    try:
+        routine_index = int(console.input("[bold cyan]choose a routine:[/] "))
+        routine = manager.get_routine(routine_index) 
+    except ValueError as e:
+        console.print(f"[red]{e}[/red]")
+
+    # get exercise for report
+    for index, exercise in enumerate(routine.exercises, start=1):
+        print(f"{index} | {exercise}")
+    exercise_index = int(console.input("[bold cyan]choose an exercise:[/] "))
+
+    if exercise_index < 1 or exercise_index > len(routine.exercises):
+        return
+    
+    filtered_sessions = filter_sessions_by_routine(sessions=sessions, routine=routine)
+    if not filtered_sessions:
+        return
+
+    # exercise_index is 1-based 
+    for session in filtered_sessions:
+        print(f"Session date: {session.date}")
+        exercise = session.exercises[exercise_index - 1]
+        print(f"Exercise name: {exercise.name}. Reps: {exercise.reps}")
+
+    exit = input("Return to main menu")
+    if exit:
+        return
+
+    
