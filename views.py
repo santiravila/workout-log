@@ -1,6 +1,6 @@
-import sys
 from controller import manager
 import inflect
+import matplotlib
 from rich.console import Console
 from rich.panel import Panel
 from rich.align import Align
@@ -175,8 +175,23 @@ def create_session(routines):
 
 
 def print_routines(routines):
-    for routine in routines:
-        print(f"{routine.id} | {routine.name}")
+    # validate
+    if not routines:
+            console.print(
+                Panel(
+                    "No saved routines",
+                    title="Routines",
+                    border_style="red",
+                )
+            )
+            return
+    
+    # show available routines
+    routines_tree = Tree("Available Routines", guide_style="bold cyan")
+    for i, routine in enumerate(routines, start=1):
+        routines_tree.add(f"[bold]{i}[/bold] · {routine.name}")
+
+    console.print(Panel(routines_tree, border_style="cyan"))
 
 
 def consult_log(sessions, routines):
@@ -213,24 +228,6 @@ def consult_log(sessions, routines):
     if option == 1:
         print_sessions(sessions=sessions)
     elif option == 2:
-        # validate
-        if not routines:
-            console.print(
-                Panel(
-                    "No saved routines",
-                    title="Routines",
-                    border_style="red",
-                )
-            )
-            return
-    
-        # show available routines
-        routines_tree = Tree("Available Routines", guide_style="bold cyan")
-        for i, routine in enumerate(routines, start=1):
-            routines_tree.add(f"[bold]{i}[/bold] · {routine.name}")
-
-        console.print(Panel(routines_tree, border_style="cyan"))
-        
         # get routine
         while True:
             try:
@@ -339,13 +336,16 @@ def consult_routines(routines):
 def create_report(routines, sessions):
     console.clear()
 
-    #get routine type
     print_routines(routines=routines)
-    try:
-        routine_index = int(console.input("[bold cyan]choose a routine:[/] "))
-        routine = manager.get_routine(routine_index) 
-    except ValueError as e:
-        console.print(f"[red]{e}[/red]")
+
+    # get routine type
+    while True:
+        try:
+            routine_index = int(console.input("[bold cyan]Routine index:[/] "))
+            routine = manager.get_routine(routine_index)
+            break
+        except ValueError as e:
+            console.print(f"[red]{e}[/red]")
 
     # get exercise for report
     for index, exercise in enumerate(routine.exercises, start=1):
