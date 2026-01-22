@@ -164,8 +164,18 @@ def print_routines(routines):
         print(f"{routine.id} | {routine.name}")
 
 
-def consult_log():
+def consult_log(sessions, routines):
     console.clear()
+
+    if not sessions:
+        console.print(
+            Panel(
+                "No saved sessions",
+                title="SAVED SESSIONS",
+                border_style="red",
+            )
+        )
+        return
 
     menu_text = """
         1. Display saved sessions
@@ -186,9 +196,9 @@ def consult_log():
 
     option = consult_log_choice()
     if option == 1:
-        print_sessions()
+        print_sessions(sessions=sessions)
     elif option == 2:
-        print_filtered_sessions()
+        print_filtered_sessions(sessions=sessions, routines=routines)
     elif option == 3:
         return
 
@@ -206,19 +216,8 @@ def consult_log_choice():
     return option
 
 
-def print_sessions():
+def print_sessions(sessions):
     console.clear()
-
-    sessions = manager.get_sessions()
-    if not sessions:
-        console.print(
-            Panel(
-                "No saved sessions",
-                title="SAVED SESSIONS",
-                border_style="red",
-            )
-        )
-        return
 
     tree = Tree("Sessions", guide_style="bold cyan")
 
@@ -241,10 +240,9 @@ def print_sessions():
         return
 
 
-def print_filtered_sessions():
+def print_filtered_sessions(sessions, routines):
     console.clear()
 
-    routines = manager.get_routines()
     if not routines:
         console.print(
             Panel(
@@ -268,8 +266,6 @@ def print_filtered_sessions():
             break
         except ValueError as e:
             console.print(f"[red]{e}[/red]")
-
-    sessions = manager.get_sessions()
 
     filtered_sessions = [
         session for session in sessions if session.routine_name == routine.name
