@@ -1,6 +1,7 @@
 from controller import manager
 import inflect
-import matplotlib
+import matplotlib.pyplot as plt # TEMPORARY, GO TO MODELS
+import numpy as np # TEMPORARY, GO TO MODELS
 from rich.console import Console
 from rich.panel import Panel
 from rich.align import Align
@@ -224,7 +225,16 @@ def consult_log(sessions, routines):
         )
     )
 
-    option = consult_log_choice()
+    # consult option
+    while True:
+        try:
+            option = int(input("Option: "))
+            if option < 0 or option > 3:
+                pass
+            break
+        except ValueError:
+            pass
+
     if option == 1:
         print_sessions(sessions=sessions)
     elif option == 2:
@@ -241,19 +251,6 @@ def consult_log(sessions, routines):
         print_sessions(filtered_sessions)
     elif option == 3:
         return
-
-
-def consult_log_choice():
-    while True:
-        try:
-            option = int(input("Option: "))
-            if option < 0 or option > 3:
-                pass
-            break
-        except ValueError:
-            pass
-
-    return option
 
 
 def print_sessions(sessions):
@@ -347,11 +344,14 @@ def create_report(routines, sessions):
         except ValueError as e:
             console.print(f"[red]{e}[/red]")
 
-    # get exercise for report
+    # print exercises for that routine (POLISH THIS ONE)
     for index, exercise in enumerate(routine.exercises, start=1):
         print(f"{index} | {exercise}")
+
+    # get exercise for report (TRY-EXCEPT INPUT)
     exercise_index = int(console.input("[bold cyan]choose an exercise:[/] "))
 
+    # improve validation
     if exercise_index < 1 or exercise_index > len(routine.exercises):
         return
     
@@ -359,11 +359,40 @@ def create_report(routines, sessions):
     if not filtered_sessions:
         return
 
+    dates = []
+    reps_per_set = {}
+
     # exercise_index is 1-based 
+    routine_exercise = routine.exercises[exercise_index - 1]
+    for set in range(1, routine_exercise.sets + 1):
+        session_reps = []
+        for session in filtered_sessions:
+            exercise = session.exercises[exercise_index - 1]
+            session_reps.append(exercise.reps[set - 1])
+        reps_per_set[set] = tuple(session_reps)
+
     for session in filtered_sessions:
-        print(f"Session date: {session.date}")
-        exercise = session.exercises[exercise_index - 1]
-        print(f"Exercise name: {exercise.name}. Reps: {exercise.reps}")
+        dates.append(session.date)
+
+
+    x = np.arange(len(dates))  # the label locations
+    width = 0.25  # the width of the bars
+    multiplier = 0
+    fig, ax = plt.subplots(layout='constrained')
+
+    for set, reps in reps_per_set.items():
+        offset = width * multiplier
+        rects = ax.bar(x + offset, reps, width, label=set)
+        ax.bar_label(rects, padding=3)
+        multiplier += 1
+    
+    ax.set_ylabel('Rep number')
+    ax.set_title(f'Workout report for {routine_exercise.name}')
+    ax.set_xticks(x + width, dates)
+    ax.legend(loc='upper left', ncols=3)
+    ax.set_ylim(0, 10)
+
+    plt.show()
 
     exit = input("Return to main menu")
     if exit:
