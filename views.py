@@ -1,7 +1,8 @@
 from controller import manager
+from datetime import datetime
 import inflect
-import matplotlib.pyplot as plt # TEMPORARY, GO TO MODELS
-import numpy as np # TEMPORARY, GO TO MODELS
+import matplotlib.pyplot as plt # TEMPORARY, GO TO MODELS (MAYBE)
+import numpy as np # TEMPORARY, GO TO MODELS (MAYBE)
 from rich.console import Console
 from rich.panel import Panel
 from rich.align import Align
@@ -399,11 +400,13 @@ def create_report(routines, sessions):
 
     report = manager.create_report(routine, filtered_sessions, exercise_index - 1)
     dates = report.get_timeline()
+    # LIST COMPREHENSION VS MAP HERE
+    formatted_dates = [date.strftime("%A, %d %B %Y") for date in dates]
     reps_per_set = report.get_measurements()
     max_reps = report.max_measurement()
     
     # PLOTTING
-    x = np.arange(len(dates))  # the label locations
+    x = np.arange(len(formatted_dates))  # the label locations
     width = 0.25 
     multiplier = 0
     fig, ax = plt.subplots(layout='constrained')
@@ -416,7 +419,7 @@ def create_report(routines, sessions):
     
     ax.set_ylabel('Rep number')
     ax.set_title(f'Workout report for {routine_exercise.name}')
-    ax.set_xticks(x + width, dates)
+    ax.set_xticks(x + width, formatted_dates)
     ax.legend(loc='upper left', ncols=3)
     ax.set_ylim(0, max_reps)
 
