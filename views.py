@@ -21,9 +21,9 @@ def print_menu():
 
     menu_text = """
     1. Create new Workout Session
-    2. Consult Workout Log
+    2. View Workout Log
     3. Create a new Routine
-    4. Consult Routines
+    4. View Routines
     5. Create workout report
     6. Exit
     """
@@ -119,6 +119,10 @@ def create_routine():
             )
         )
 
+    exit = input("Return to main menu") or True
+    if exit:
+        return
+
 
 def create_session(routines):
     console.clear()
@@ -173,6 +177,10 @@ def create_session(routines):
                 border_style="red",
             )
         )
+    
+    exit = input("Return to main menu") or True
+    if exit:
+        return
 
 
 def print_routines(routines):
@@ -195,7 +203,7 @@ def print_routines(routines):
     console.print(Panel(routines_tree, border_style="cyan"))
 
 
-def consult_log(sessions, routines):
+def view_log(sessions, routines):
     console.clear()
 
     if not sessions:
@@ -238,6 +246,14 @@ def consult_log(sessions, routines):
     if option == 1:
         print_sessions(sessions=sessions)
     elif option == 2:
+        # show routines
+        routine_tree = Tree("Routines", guide_style="bold cyan")
+
+        for i, routine in enumerate(routines, start=1):
+            routine_tree.add(f"[bold]{i}[/bold] · {routine.name}")
+
+        console.print(routine_tree)
+
         # get routine
         while True:
             try:
@@ -247,8 +263,15 @@ def consult_log(sessions, routines):
             except ValueError as e:
                 console.print(f"[red]{e}[/red]")
 
-        filtered_sessions = filter_sessions_by_routine(sessions, routine)
-        print_sessions(filtered_sessions)
+        try:
+            filtered_sessions = filter_sessions_by_routine(sessions, routine)
+        except ValueError:
+            exit = input("Return to main menu") or True
+            if exit:
+                return
+        else:
+            print_sessions(filtered_sessions)
+    
     elif option == 3:
         return
 
@@ -272,7 +295,7 @@ def print_sessions(sessions):
         )
     )
 
-    exit = input("Return to main menu")
+    exit = input("Return to main menu") or True
     if exit:
         return
 
@@ -290,12 +313,12 @@ def filter_sessions_by_routine(sessions, routine):
                 border_style="yellow",
             )
         )
-        return
+        raise ValueError
     
     return filtered_sessions
 
 
-def consult_routines(routines):
+def view_routines(routines):
     console.clear()
 
     if not routines:
@@ -308,24 +331,24 @@ def consult_routines(routines):
         )
         return
 
-    tree = Tree("Routines", guide_style="bold cyan")
+    routine_tree = Tree("Routines", guide_style="bold cyan")
 
     for routine in routines:
-        routine_node = tree.add(f"[bold]{routine}[/bold]")
+        routine_node = routine_tree.add(f"[bold]{routine}[/bold]")
 
         for exercise in routine.exercises:
             routine_node.add(str(exercise))
 
     console.print(
         Panel(
-            tree,
+            routine_tree,
             title="SAVED ROUTINES",
             border_style="cyan",
             padding=(1, 2),
         )
     )
 
-    exit = input("Return to main menu")
+    exit = input("Return to main menu") or True
     if exit:
         return
 
@@ -338,45 +361,50 @@ def create_report(routines, sessions):
     # get routine type
     while True:
         try:
-            routine_index = int(console.input("[bold cyan]Routine index:[/] "))
-            routine = manager.get_routine(routine_index)
+            routine_index = int(console.input("[bold cyan]Routine index:[/] ")) #INDICES ARE 1-BASED
+            routine = manager.get_routine(routine_index) 
             break
         except ValueError as e:
             console.print(f"[red]{e}[/red]")
 
-    # print exercises for that routine (POLISH THIS ONE)
-    for index, exercise in enumerate(routine.exercises, start=1):
-        print(f"{index} | {exercise}")
+    # print exercises for that routine
+    exercise_tree = Tree("Exercises", guide_style="bold cyan")
+    for i, exercise in enumerate(routine.exercises, start=1):
+        exercise_tree.add(f"[bold]{i}[/bold] · {exercise.name}")
+    console.print(exercise_tree)
 
-    # get exercise for report (TRY-EXCEPT INPUT)
-    exercise_index = int(console.input("[bold cyan]choose an exercise:[/] "))
+    # get exercise for report 
+    while True:
+        try:
+            exercise_index = int(console.input("[bold cyan]Choose an exercise:[/] "))
+            break
+        except ValueError as e:
+            console.print(f"[red]{e}[/red]")
 
-    # improve validation
+    # improve validation 
     if exercise_index < 1 or exercise_index > len(routine.exercises):
         return
     
-    filtered_sessions = filter_sessions_by_routine(sessions=sessions, routine=routine)
-    if not filtered_sessions:
-        return
+    try:
+        filtered_sessions = filter_sessions_by_routine(sessions=sessions, routine=routine)
+    except ValueError:
+        exit = input("Return to main menu") or True
+        if exit:
+            return
+    else:
+        if not filtered_sessions:
+            return
 
-    dates = []
-    reps_per_set = {}
-
-    # exercise_index is 1-based 
     routine_exercise = routine.exercises[exercise_index - 1]
-    for set in range(1, routine_exercise.sets + 1):
-        session_reps = []
-        for session in filtered_sessions:
-            exercise = session.exercises[exercise_index - 1]
-            session_reps.append(exercise.reps[set - 1])
-        reps_per_set[set] = tuple(session_reps)
 
-    for session in filtered_sessions:
-        dates.append(session.date)
-
-
+    report = manager.create_report(routine, filtered_sessions, exercise_index - 1)
+    dates = report.get_timeline()
+    reps_per_set = report.get_measurements()
+    max_reps = report.max_measurement()
+    
+    # PLOTTING
     x = np.arange(len(dates))  # the label locations
-    width = 0.25  # the width of the bars
+    width = 0.25 
     multiplier = 0
     fig, ax = plt.subplots(layout='constrained')
 
@@ -390,11 +418,11 @@ def create_report(routines, sessions):
     ax.set_title(f'Workout report for {routine_exercise.name}')
     ax.set_xticks(x + width, dates)
     ax.legend(loc='upper left', ncols=3)
-    ax.set_ylim(0, 10)
+    ax.set_ylim(0, max_reps)
 
     plt.show()
 
-    exit = input("Return to main menu")
+    exit = input("Return to main menu") or True
     if exit:
         return
 

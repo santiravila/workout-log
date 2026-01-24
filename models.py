@@ -3,7 +3,6 @@ from copy import deepcopy
 import json
 from pathlib import Path
 
-
 DATA_DIR = Path("data")
 STORAGE_FILE = DATA_DIR / "storage.json"
 
@@ -32,7 +31,7 @@ class Exercise:
         )
 
     def __str__(self):
-        return f"Exercise name: {self.name} | Sets: {self.sets} | Weight: {self.weight} | Reps: {self.reps}"
+        return f"Exercise: {self.name} | Sets: {self.sets} | Weight: {self.weight} | Reps: {self.reps}"
 
     def to_dict(self):
         return {
@@ -48,8 +47,10 @@ class Session:
     def from_dict(cls, data: dict):
         if "date" in data:
             data["date"] = datetime.fromisoformat(data["date"])
-        
-        data["exercises"] = [Exercise.from_dict(exercise) for exercise in data["exercises"]]
+
+        data["exercises"] = [
+            Exercise.from_dict(exercise) for exercise in data["exercises"]
+        ]
 
         return cls(**data)
 
@@ -62,7 +63,7 @@ class Session:
         self.routine_name = routine_name
 
     def __str__(self):
-        return f"Routine name: {self.routine_name}, Workout Date: {self.date}"
+        return f"Routine: {self.routine_name}, Workout Date: {self.date}"
 
     def to_dict(self):
         return {
@@ -76,7 +77,9 @@ class Session:
 class Routine:
     @classmethod
     def from_dict(cls, data: dict):
-        data["exercises"] = [Exercise.from_dict(exercise) for exercise in data["exercises"]]
+        data["exercises"] = [
+            Exercise.from_dict(exercise) for exercise in data["exercises"]
+        ]
         return cls(**data)
 
     def __init__(
@@ -99,7 +102,7 @@ class Routine:
         )
 
     def __str__(self):
-        return f"Routine name: {self.name} | Rest: {self.rest} | Tempo: {self.tempo}"
+        return f"Routine: {self.name} | Rest: {self.rest} | Tempo: {self.tempo}"
 
     def to_dict(self):
         return {
@@ -126,7 +129,7 @@ class RoutineCreation:
     def add_exercise(self, name: str, sets: int, weight: float):
         if sets <= 0:
             raise ValueError("Sets must be positive")
-        
+
         if weight < 0:
             raise ValueError("Weight cannot be negative")
         exercise = Exercise(name, sets, weight)
@@ -136,7 +139,7 @@ class RoutineCreation:
         if rest < 0:
             raise ValueError("Rest cannot be negative")
         self.rest = rest
-    
+
     def set_tempo(self, tempo: str):
         if not tempo:
             raise ValueError("Tempo cannot be empty")
@@ -145,19 +148,13 @@ class RoutineCreation:
     def finish(self) -> Routine | None:
         if not self.exercises:
             raise ValueError("Routine must have at least one exercise")
-        
+
         if self.rest is None or self.tempo is None:
             raise ValueError("Routine is incomplete")
-        
+
         routine_id = len(self.manager.get_routines()) + 1
 
-        routine = Routine(
-            routine_id,
-            self.name,
-            self.rest,
-            self.tempo,
-            self.exercises
-        )
+        routine = Routine(routine_id, self.name, self.rest, self.tempo, self.exercises)
 
         self.manager.routines.append(routine)
         return routine
@@ -172,46 +169,75 @@ class SessionCreation:
     def add_reps(self, exercise: Exercise, rep_number: int):
         if rep_number < 0:
             raise ValueError("Reps must be positive")
-        
+
         for internal_exercise in self.exercises:
             if exercise.name == internal_exercise.name:
-                internal_exercise.reps.append(rep_number)        
-                
+                internal_exercise.reps.append(rep_number)
+
     def finish(self):
         for exercise in self.exercises:
             if exercise.sets != len(exercise.reps):
-                raise ValueError(f"Exercise reps: {exercise.reps} do not match number of sets: {exercise.sets}")
+                raise ValueError(
+                    f"Exercise reps: {exercise.reps} do not match number of sets: {exercise.sets}"
+                )
 
         session_id = len(self.manager.sessions) + 1
 
-        session = Session(
-            session_id,
-            self.routine.name,
-            datetime.now(),
-            self.exercises
-        )
+        session = Session(session_id, self.routine.name, datetime.now(), self.exercises)
 
         self.manager.sessions.append(session)
         return session
 
 
+class ReportGenerator:
+    def __init__(self, routine: Routine, sessions: list[Session], exercise_index: int):
+        self.routine = routine
+        self.sessions = sessions
+        self.exercise_index = exercise_index
+        self.timeline = []
+        self.measurements = {}
+
+    def get_timeline(self):  # CURRENTLY HARDCODING DATES AS THE X VARIABLE
+        for session in self.sessions:
+            self.timeline.append(session.date)
+        return self.timeline
+
+    def get_measurements(
+        self,
+    ):  # CURRENTLY HARDCODING SETS, REPS AS THE Y VARIABLES FOR GROUPED BARS
+        routine_exercise = self.routine.exercises[self.exercise_index]
+        for set in range(1, routine_exercise.sets + 1):
+            session_reps = []
+            for session in self.sessions:
+                exercise = session.exercises[self.exercise_index]
+                session_reps.append(exercise.reps[set - 1])
+            self.measurements[set] = tuple(session_reps)
+        return self.measurements
+
+    def max_measurement(self):
+        return max(element for data in self.measurements.values() for element in data)
+
+
 class AppManager:
     def __init__(self) -> None:
-        self.routines = [] 
-        self.sessions = [] 
+        self.routines = []
+        self.sessions = []
 
     def start_routine_creation(self, name: str) -> RoutineCreation:
         return RoutineCreation(self, name)
 
     def start_session_creation(self, routine: Routine) -> SessionCreation:
         return SessionCreation(self, routine)
-    
+
+    def create_report(self, routine, sessions, exercise_index):
+        return ReportGenerator(routine, sessions, exercise_index)
+
     def get_routines(self):
         return self.routines
-    
+
     def get_sessions(self):
         return self.sessions
-    
+
     def get_routine(self, index: int) -> Routine:
         for routine in self.routines:
             if routine.id == index:
@@ -223,7 +249,7 @@ class AppManager:
             "routines": [r.to_dict() for r in self.routines],
             "sessions": [s.to_dict() for s in self.sessions],
         }
-    
+
         with open(STORAGE_FILE, "w") as f:
             json.dump(data, f, indent=2)
 
