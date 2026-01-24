@@ -197,14 +197,14 @@ class ReportGenerator:
         self.timeline = []
         self.measurements = {}
 
-    def get_timeline(self):  # CURRENTLY HARDCODING DATES AS THE X VARIABLE
+    def get_timeline(self):
+        self.timeline = []
         for session in self.sessions:
             self.timeline.append(session.date)
         return self.timeline
 
-    def get_measurements(
-        self,
-    ):  # CURRENTLY HARDCODING SETS, REPS AS THE Y VARIABLES FOR GROUPED BARS
+    def get_measurements(self):
+        self.measurements = {}
         routine_exercise = self.routine.exercises[self.exercise_index]
         for set in range(1, routine_exercise.sets + 1):
             session_reps = []
@@ -242,7 +242,7 @@ class AppManager:
         for routine in self.routines:
             if routine.id == index:
                 return deepcopy(routine)
-        raise ValueError(f"No routine of index: {routine.id}")
+        raise ValueError(f"No routine of index: {index}")
 
     def save_data(self):
         data = {

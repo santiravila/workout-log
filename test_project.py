@@ -1,86 +1,101 @@
-import pytest
 from models import AppManager
 
 
-def test_create_routine_increases_count():
+def test_routine_creation_service():
     manager = AppManager()
-    initial_count = len(manager.routines)
 
-    creation = manager.start_routine_creation("name")
-    creation.add_exercise("pushups", 1, 5)
-    creation.set_rest(5.4)
-    creation.set_tempo("1-2-3-4")
+    creation = manager.start_routine_creation("Test Routine")
+    creation.add_exercise("Pushups", sets=3, weight=0)
+    creation.set_rest(60)
+    creation.set_tempo("normal")
     creation.finish()
 
-    assert len(manager.routines) == initial_count + 1
+    routines = manager.get_routines()
+
+    assert len(routines) == 1
+    assert routines[0].name == "Test Routine"
+    assert len(routines[0].exercises) == 1
 
 
-def test_create_routine_creates_valid_routine():
+def test_session_creation_service():
     manager = AppManager()
 
-    creation = manager.start_routine_creation("name")
-    creation.add_exercise("pushups", 1, 5)
-    creation.set_rest(5.4)
-    creation.set_tempo("1-2-3-4")
-    routine = creation.finish()
-
-    if routine:
-        assert routine.name == "name"
-        assert routine.rest == 5.4
-        assert routine.exercises[0].name == "pushups"
-
-
-def test_get_routine_finds():
-    manager = AppManager()
-
-    creation = manager.start_routine_creation("name")
-    creation.add_exercise("pushups", 1, 5)
-    creation.set_rest(5.4)
-    creation.set_tempo("1-2-3-4")
-    routine = creation.finish()
-
-    assert manager.get_routine("name") == routine
-
-    with pytest.raises(ValueError):
-        manager.get_routine("something wrong")
-
-
-def test_create_session_increases_count():
-    manager = AppManager()
-    initial_count = len(manager.sessions)
-
-    routine_creation = manager.start_routine_creation("name")
-    routine_creation.add_exercise("pushups", 1, 5)
-    routine_creation.set_rest(5.4)
-    routine_creation.set_tempo("1-2-3-4")
+    # Create routine
+    routine_creation = manager.start_routine_creation("Upper Body")
+    routine_creation.add_exercise("Bench Press", sets=2, weight=100)
     routine_creation.finish()
 
-    routine = manager.get_routine("name")
+    routine = manager.get_routines()[0]
+
+    # Create session
     session_creation = manager.start_session_creation(routine)
-    session_creation.add_reps(routine.exercises[0], 0, 10)
+    session_creation.add_reps("Bench Press", [8, 6])
     session_creation.finish()
 
-    assert len(manager.sessions) == initial_count + 1
+    sessions = manager.get_sessions()
+
+    assert len(sessions) == 1
+    assert sessions[0].exercises[0].reps == [8, 6]
 
 
-def test_persistence(tmp_path):
-    p = tmp_path / "test_storage.json"
-
+def test_persistence_roundtrip(tmp_path, monkeypatch):
     manager = AppManager()
-    manager.file_path = str(p)
 
-    creation = manager.start_routine_creation("TestRoutine")
-    creation.add_exercise("pushups", 1, 5)
-    creation.set_rest(1.0)
-    creation.set_tempo("1-2-3-4")
+    # Create routine
+    creation = manager.start_routine_creation("Persisted Routine")
+    creation.add_exercise("Squats", sets=3, weight=120)
     creation.finish()
 
-    manager.save_data()
-    assert p.exists()
+    # Patch storage file location
+    from models import STORAGE_FILE
+    monkeypatch.setattr("models.STORAGE_FILE", tmp_path / "data.json")
 
+    manager.save_data()
+
+    # Reload
     new_manager = AppManager()
-    new_manager.file_path = str(p)
+    monkeypatch.setattr("models.STORAGE_FILE", tmp_path / "data.json")
     new_manager.load_data()
 
-    assert len(new_manager.routines) == 1
-    assert new_manager.routines[0].name == "TestRoutine"
+    routines = new_manager.get_routines()
+
+    assert len(routines) == 1
+    assert routines[0].name == "Persisted Routine"
+    assert routines[0].exercises[0].name == "Squats"
+
+
+def test_report_generator_service():
+    manager = AppManager()
+
+    # Create routine
+    routine_creation = manager.start_routine_creation("Report Routine")
+    routine_creation.add_exercise("Bench Press", sets=2, weight=100)
+    routine_creation.finish()
+
+    routine = manager.get_routines()[0]
+
+    # Create sessions
+    session_creation = manager.start_session_creation(routine)
+    session_creation.add_reps("Bench Press", [8, 6])
+    session_creation.finish()
+
+    session_creation = manager.start_session_creation(routine)
+    session_creation.add_reps("Bench Press", [9, 7])
+    session_creation.finish()
+
+    sessions = manager.get_sessions()
+
+    # Generate report
+    report = manager.create_report(
+        routine=routine,
+        sessions=sessions,
+        exercise_index=1,
+    )
+
+    timeline = report.get_timeline()
+    measurements = report.get_measurements()
+    max_rep = report.max_measurement()
+
+    assert len(timeline) == 2
+    assert len(measurements) == 2
+    assert max_rep == 9

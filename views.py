@@ -1,18 +1,17 @@
 from controller import manager
-from datetime import datetime
 import inflect
-import matplotlib.pyplot as plt # TEMPORARY, GO TO MODELS (MAYBE)
-import numpy as np # TEMPORARY, GO TO MODELS (MAYBE)
+import matplotlib.pyplot as plt 
+import numpy as np 
 from rich.console import Console
 from rich.panel import Panel
 from rich.align import Align
 from rich.tree import Tree
 
 
-p = inflect.engine()
-console = Console()
+p = inflect.engine() # inflect
+console = Console() # rich
 
-
+# for disabling type error messages 
 def ordinal(n: int) -> str:
     return p.ordinal(n)  # type: ignore[arg-type]
 
@@ -55,7 +54,7 @@ def create_routine():
 
     console.print(
         Panel(
-            "Enter the data requested below.\nFields marked are required.",
+            "Enter the data requested below.",
             title="[bold cyan]Routine Creation[/bold cyan]",
             border_style="cyan",
             padding=(1, 2),
@@ -187,14 +186,14 @@ def create_session(routines):
 def print_routines(routines):
     # validate
     if not routines:
-            console.print(
-                Panel(
-                    "No saved routines",
-                    title="Routines",
-                    border_style="red",
-                )
+        console.print(
+            Panel(
+                "No saved routines",
+                title="Routines",
+                border_style="red",
             )
-            return
+        )
+        return
     
     # show available routines
     routines_tree = Tree("Available Routines", guide_style="bold cyan")
@@ -266,12 +265,13 @@ def view_log(sessions, routines):
 
         try:
             filtered_sessions = filter_sessions_by_routine(sessions, routine)
-        except ValueError:
+        except ValueError as e:
+            console.print(f"[red]{e}[/red]")
             exit = input("Return to main menu") or True
             if exit:
                 return
         else:
-            print_sessions(filtered_sessions)
+            print_sessions(sessions=filtered_sessions)
     
     elif option == 3:
         return
@@ -368,6 +368,17 @@ def create_report(routines, sessions):
         except ValueError as e:
             console.print(f"[red]{e}[/red]")
 
+    try:
+        filtered_sessions = filter_sessions_by_routine(sessions=sessions, routine=routine)
+    except ValueError:
+        exit = input("Return to main menu") or True
+        if exit:
+            return
+    else:
+        if not filtered_sessions:
+            console.print(f"[red]{routine.name} has no sessions[/red]")
+            return
+
     # print exercises for that routine
     exercise_tree = Tree("Exercises", guide_style="bold cyan")
     for i, exercise in enumerate(routine.exercises, start=1):
@@ -385,22 +396,11 @@ def create_report(routines, sessions):
     # improve validation 
     if exercise_index < 1 or exercise_index > len(routine.exercises):
         return
-    
-    try:
-        filtered_sessions = filter_sessions_by_routine(sessions=sessions, routine=routine)
-    except ValueError:
-        exit = input("Return to main menu") or True
-        if exit:
-            return
-    else:
-        if not filtered_sessions:
-            return
 
     routine_exercise = routine.exercises[exercise_index - 1]
 
     report = manager.create_report(routine, filtered_sessions, exercise_index - 1)
     dates = report.get_timeline()
-    # LIST COMPREHENSION VS MAP HERE
     formatted_dates = [date.strftime("%A, %d %B %Y") for date in dates]
     reps_per_set = report.get_measurements()
     max_reps = report.max_measurement()
