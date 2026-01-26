@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 DATA_DIR = Path("data")
-STORAGE_FILE = DATA_DIR / "storage.json"
+STORAGE_FILE = DATA_DIR / ".storage.json"
 
 
 class Exercise:
