@@ -1,5 +1,6 @@
 # storage file
-data/storage.json
+data/.storage.json
+
 
 # Standard Python ignores
 __pycache__/

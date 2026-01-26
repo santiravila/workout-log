@@ -205,11 +205,11 @@ class ReportGenerator:
 
     def get_measurements(self):
         self.measurements = {}
-        routine_exercise = self.routine.exercises[self.exercise_index]
+        routine_exercise = self.routine.exercises[self.exercise_index - 1]
         for set in range(1, routine_exercise.sets + 1):
             session_reps = []
             for session in self.sessions:
-                exercise = session.exercises[self.exercise_index]
+                exercise = session.exercises[self.exercise_index - 1]
                 session_reps.append(exercise.reps[set - 1])
             self.measurements[set] = tuple(session_reps)
         return self.measurements
