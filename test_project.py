@@ -1,4 +1,5 @@
 from models import AppManager
+from pathlib import Path
 
 
 def test_routine_creation_service():
@@ -20,16 +21,19 @@ def test_routine_creation_service():
 def test_session_creation_service():
     manager = AppManager()
 
-    # Create routine
     routine_creation = manager.start_routine_creation("Upper Body")
     routine_creation.add_exercise("Bench Press", sets=2, weight=100)
+    routine_creation.set_rest(90)
+    routine_creation.set_tempo("2-1-2")
     routine_creation.finish()
 
     routine = manager.get_routines()[0]
+    exercise = routine.exercises[0]
 
-    # Create session
     session_creation = manager.start_session_creation(routine)
-    session_creation.add_reps("Bench Press", [8, 6])
+
+    session_creation.add_reps(exercise, 8)
+    session_creation.add_reps(exercise, 6)
     session_creation.finish()
 
     sessions = manager.get_sessions()
@@ -38,23 +42,19 @@ def test_session_creation_service():
     assert sessions[0].exercises[0].reps == [8, 6]
 
 
-def test_persistence_roundtrip(tmp_path, monkeypatch):
-    manager = AppManager()
+def test_persistence():
+    test_storage = Path("data/test_storage.json")
+    manager = AppManager(storage_file=test_storage)
 
-    # Create routine
     creation = manager.start_routine_creation("Persisted Routine")
     creation.add_exercise("Squats", sets=3, weight=120)
+    creation.set_rest(5)
+    creation.set_tempo("1-2-3-4")
     creation.finish()
-
-    # Patch storage file location
-    from models import STORAGE_FILE
-    monkeypatch.setattr("models.STORAGE_FILE", tmp_path / "data.json")
 
     manager.save_data()
 
-    # Reload
     new_manager = AppManager()
-    monkeypatch.setattr("models.STORAGE_FILE", tmp_path / "data.json")
     new_manager.load_data()
 
     routines = new_manager.get_routines()
@@ -67,25 +67,27 @@ def test_persistence_roundtrip(tmp_path, monkeypatch):
 def test_report_generator_service():
     manager = AppManager()
 
-    # Create routine
     routine_creation = manager.start_routine_creation("Report Routine")
     routine_creation.add_exercise("Bench Press", sets=2, weight=100)
+    routine_creation.set_rest(90)
+    routine_creation.set_tempo("2-1-2")
     routine_creation.finish()
 
     routine = manager.get_routines()[0]
+    exercise = routine.exercises[0]
 
-    # Create sessions
     session_creation = manager.start_session_creation(routine)
-    session_creation.add_reps("Bench Press", [8, 6])
+    session_creation.add_reps(exercise, 8)
+    session_creation.add_reps(exercise, 6)
     session_creation.finish()
 
     session_creation = manager.start_session_creation(routine)
-    session_creation.add_reps("Bench Press", [9, 7])
+    session_creation.add_reps(exercise, 9)
+    session_creation.add_reps(exercise, 7)
     session_creation.finish()
 
     sessions = manager.get_sessions()
 
-    # Generate report
     report = manager.create_report(
         routine=routine,
         sessions=sessions,
@@ -97,5 +99,6 @@ def test_report_generator_service():
     max_rep = report.max_measurement()
 
     assert len(timeline) == 2
-    assert len(measurements) == 2
+    assert measurements[1] == (8, 9)
+    assert measurements[2] == (6, 7)
     assert max_rep == 9

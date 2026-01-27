@@ -1,5 +1,7 @@
 # storage file
-data/.storage.json
+data/test_storage.json
+data/storage.json
+
 
 
 # Standard Python ignores

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 DATA_DIR = Path("data")
-STORAGE_FILE = DATA_DIR / ".storage.json"
+STORAGE_FILE = DATA_DIR / "storage.json"
 
 
 class Exercise:
@@ -205,11 +205,11 @@ class ReportGenerator:
 
     def get_measurements(self):
         self.measurements = {}
-        routine_exercise = self.routine.exercises[self.exercise_index - 1]
+        routine_exercise = self.routine.exercises[self.exercise_index]
         for set in range(1, routine_exercise.sets + 1):
             session_reps = []
             for session in self.sessions:
-                exercise = session.exercises[self.exercise_index - 1]
+                exercise = session.exercises[self.exercise_index]
                 session_reps.append(exercise.reps[set - 1])
             self.measurements[set] = tuple(session_reps)
         return self.measurements
@@ -219,9 +219,14 @@ class ReportGenerator:
 
 
 class AppManager:
-    def __init__(self) -> None:
+    def __init__(self, storage_file=None) -> None:
         self.routines = []
         self.sessions = []
+
+        if storage_file is None:
+            self.storage_file = STORAGE_FILE
+        else:
+            self.storage_file = storage_file
 
     def start_routine_creation(self, name: str) -> RoutineCreation:
         return RoutineCreation(self, name)
@@ -250,7 +255,7 @@ class AppManager:
             "sessions": [s.to_dict() for s in self.sessions],
         }
 
-        with open(STORAGE_FILE, "w") as f:
+        with open(self.storage_file, "w") as f:
             json.dump(data, f, indent=2)
 
     def load_data(self):
@@ -258,7 +263,7 @@ class AppManager:
         DATA_DIR.mkdir(exist_ok=True)
 
         try:
-            with open(STORAGE_FILE, "r") as f:
+            with open(self.storage_file, "r") as f:
                 data = json.load(f)
 
             for routine in data["routines"]:

@@ -128,8 +128,16 @@ def create_session(routines):
     console.clear()
 
     if not routines:
-        print("No saved routines")
-        return
+        console.print(
+            Panel(
+                "No saved routines",
+                title="Saved Routines",
+                border_style="red",
+            )
+        )
+        exit = input("Return to main menu") or True
+        if exit:
+            return
 
     routines_tree = Tree("Routines")
 
@@ -193,7 +201,7 @@ def print_routines(routines):
                 border_style="red",
             )
         )
-        return
+        raise ValueError
     
     # show available routines
     routines_tree = Tree("Available Routines", guide_style="bold cyan")
@@ -214,7 +222,9 @@ def view_log(sessions, routines):
                 border_style="red",
             )
         )
-        return
+        exit = input("Return to main menu") or True
+        if exit:
+            return
 
     menu_text = """
         1. Display saved sessions
@@ -330,7 +340,9 @@ def view_routines(routines):
                 border_style="red",
             )
         )
-        return
+        exit = input("Return to main menu") or True
+        if exit:
+            return
 
     routine_tree = Tree("Routines", guide_style="bold cyan")
 
@@ -357,7 +369,12 @@ def view_routines(routines):
 def create_report(routines, sessions):
     console.clear()
 
-    print_routines(routines=routines)
+    try:
+        print_routines(routines=routines)
+    except ValueError:
+        exit = input("Return to main menu") or True
+        if exit:
+            return
 
     # get routine type
     while True:
