@@ -1,6 +1,6 @@
 # Workout Log
 
-## Video Demo: URL Here
+## Video Demo: <https://youtu.be/CiYRwP6gK28>
 
 ## Description:
 I had been tracking my workouts in iOS Notes and realized I was doing too much copy-pasteing among other inefficient practices, specially managing several exercise routines within the week. I found value in the idea of representing exercise routines as blueprints for creating workout sessions in order to save time every time I log a session. And thats basically the base premise of this program. 
